@@ -1,0 +1,103 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="90">
+            <item index="0" class="java.lang.String" itemvalue="mysqlclient" />
+            <item index="1" class="java.lang.String" itemvalue="Automat" />
+            <item index="2" class="java.lang.String" itemvalue="cffi" />
+            <item index="3" class="java.lang.String" itemvalue="psycopg2-binary" />
+            <item index="4" class="java.lang.String" itemvalue="python-dotenv" />
+            <item index="5" class="java.lang.String" itemvalue="setuptools" />
+            <item index="6" class="java.lang.String" itemvalue="django-six" />
+            <item index="7" class="java.lang.String" itemvalue="pycparser" />
+            <item index="8" class="java.lang.String" itemvalue="requests" />
+            <item index="9" class="java.lang.String" itemvalue="excel-base" />
+            <item index="10" class="java.lang.String" itemvalue="django-extensions" />
+            <item index="11" class="java.lang.String" itemvalue="redis" />
+            <item index="12" class="java.lang.String" itemvalue="sqlparse" />
+            <item index="13" class="java.lang.String" itemvalue="django-admin" />
+            <item index="14" class="java.lang.String" itemvalue="pygraphviz" />
+            <item index="15" class="java.lang.String" itemvalue="txaio" />
+            <item index="16" class="java.lang.String" itemvalue="django-admin-sortable2" />
+            <item index="17" class="java.lang.String" itemvalue="daphne" />
+            <item index="18" class="java.lang.String" itemvalue="djangorestframework" />
+            <item index="19" class="java.lang.String" itemvalue="django-cors-headers" />
+            <item index="20" class="java.lang.String" itemvalue="pydantic-settings" />
+            <item index="21" class="java.lang.String" itemvalue="django-flatpickr" />
+            <item index="22" class="java.lang.String" itemvalue="pydantic" />
+            <item index="23" class="java.lang.String" itemvalue="asgiref" />
+            <item index="24" class="java.lang.String" itemvalue="cryptography" />
+            <item index="25" class="java.lang.String" itemvalue="xlwt" />
+            <item index="26" class="java.lang.String" itemvalue="zope.interface" />
+            <item index="27" class="java.lang.String" itemvalue="incremental" />
+            <item index="28" class="java.lang.String" itemvalue="channels_redis" />
+            <item index="29" class="java.lang.String" itemvalue="gunicorn" />
+            <item index="30" class="java.lang.String" itemvalue="attrs" />
+            <item index="31" class="java.lang.String" itemvalue="autobahn" />
+            <item index="32" class="java.lang.String" itemvalue="pydantic_core" />
+            <item index="33" class="java.lang.String" itemvalue="channels" />
+            <item index="34" class="java.lang.String" itemvalue="Django" />
+            <item index="35" class="java.lang.String" itemvalue="typing_extensions" />
+            <item index="36" class="java.lang.String" itemvalue="pillow" />
+            <item index="37" class="java.lang.String" itemvalue="python-decouple" />
+            <item index="38" class="java.lang.String" itemvalue="django-excel-response2" />
+            <item index="39" class="java.lang.String" itemvalue="djangorestframework_simplejwt" />
+            <item index="40" class="java.lang.String" itemvalue="idna" />
+            <item index="41" class="java.lang.String" itemvalue="Twisted" />
+            <item index="42" class="java.lang.String" itemvalue="annotated-types" />
+            <item index="43" class="java.lang.String" itemvalue="PyJWT" />
+            <item index="44" class="java.lang.String" itemvalue="service-identity" />
+            <item index="45" class="java.lang.String" itemvalue="tzlocal" />
+            <item index="46" class="java.lang.String" itemvalue="six" />
+            <item index="47" class="java.lang.String" itemvalue="botocore" />
+            <item index="48" class="java.lang.String" itemvalue="pyasn1_modules" />
+            <item index="49" class="java.lang.String" itemvalue="django-rest-passwordreset" />
+            <item index="50" class="java.lang.String" itemvalue="isoweek" />
+            <item index="51" class="java.lang.String" itemvalue="python-dateutil" />
+            <item index="52" class="java.lang.String" itemvalue="screen" />
+            <item index="53" class="java.lang.String" itemvalue="packaging" />
+            <item index="54" class="java.lang.String" itemvalue="django-storages" />
+            <item index="55" class="java.lang.String" itemvalue="pyasn1" />
+            <item index="56" class="java.lang.String" itemvalue="typing-inspection" />
+            <item index="57" class="java.lang.String" itemvalue="jmespath" />
+            <item index="58" class="java.lang.String" itemvalue="boto3" />
+            <item index="59" class="java.lang.String" itemvalue="TimeConvert" />
+            <item index="60" class="java.lang.String" itemvalue="s3transfer" />
+            <item index="61" class="java.lang.String" itemvalue="pyOpenSSL" />
+            <item index="62" class="java.lang.String" itemvalue="certifi" />
+            <item index="63" class="java.lang.String" itemvalue="charset-normalizer" />
+            <item index="64" class="java.lang.String" itemvalue="urllib3" />
+            <item index="65" class="java.lang.String" itemvalue="msgpack" />
+            <item index="66" class="java.lang.String" itemvalue="httpx" />
+            <item index="67" class="java.lang.String" itemvalue="protobuf" />
+            <item index="68" class="java.lang.String" itemvalue="rsa" />
+            <item index="69" class="java.lang.String" itemvalue="google-crc32c" />
+            <item index="70" class="java.lang.String" itemvalue="hyperframe" />
+            <item index="71" class="java.lang.String" itemvalue="googleapis-common-protos" />
+            <item index="72" class="java.lang.String" itemvalue="h11" />
+            <item index="73" class="java.lang.String" itemvalue="google-cloud-storage" />
+            <item index="74" class="java.lang.String" itemvalue="h2" />
+            <item index="75" class="java.lang.String" itemvalue="firebase_admin" />
+            <item index="76" class="java.lang.String" itemvalue="hpack" />
+            <item index="77" class="java.lang.String" itemvalue="sniffio" />
+            <item index="78" class="java.lang.String" itemvalue="google-resumable-media" />
+            <item index="79" class="java.lang.String" itemvalue="proto-plus" />
+            <item index="80" class="java.lang.String" itemvalue="anyio" />
+            <item index="81" class="java.lang.String" itemvalue="cachetools" />
+            <item index="82" class="java.lang.String" itemvalue="grpcio-status" />
+            <item index="83" class="java.lang.String" itemvalue="grpcio" />
+            <item index="84" class="java.lang.String" itemvalue="CacheControl" />
+            <item index="85" class="java.lang.String" itemvalue="google-cloud-firestore" />
+            <item index="86" class="java.lang.String" itemvalue="google-cloud-core" />
+            <item index="87" class="java.lang.String" itemvalue="google-api-core" />
+            <item index="88" class="java.lang.String" itemvalue="google-auth" />
+            <item index="89" class="java.lang.String" itemvalue="httpcore" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

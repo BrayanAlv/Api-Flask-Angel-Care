@@ -1,0 +1,29 @@
+tags:
+  - Daycares
+summary: "Obtener todas las guarderías"
+description: "Devuelve una lista completa de todas las guarderías registradas en el sistema."
+responses:
+  '200':
+    description: "Operación exitosa."
+    content:
+      application/json:
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id_daycare:
+                type: integer
+                example: 1
+              name:
+                type: string
+                example: "Mi Pequeño Mundo"
+              address:
+                type: string
+                example: "Calle Falsa 123"
+              phone:
+                type: string
+                example: "555-1234"
+              created_at:
+                type: string
+                format: date-time
