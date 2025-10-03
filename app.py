@@ -5,6 +5,8 @@ import mysql.connector
 import os # <--- Importa os
 from flask_jwt_extended import JWTManager
 
+from routes.smartwatch import smartwatches_bp
+
 # Cargar variables de entorno
 load_dotenv()
 
@@ -12,6 +14,9 @@ load_dotenv()
 from routes.daycares import daycares_bp
 from routes.users import users_bp
 from routes.auth import auth_bp
+from routes.smartwatch import smartwatches_bp
+from routes.reading import readings_bp
+from routes.children_routes import children_bp
 
 # Crear la instancia de la aplicación
 app = Flask(__name__)
@@ -38,17 +43,11 @@ def not_found(error):
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Manejar errores de MySQL de forma específica
     if isinstance(e, mysql.connector.Error):
-        # Error 1062: Entrada duplicada (UNIQUE constraint)
         if e.errno == 1062:
             return jsonify({"error": "Conflicto: El registro ya existe."}), 409
-        # Otros errores de base de datos
         return jsonify({"error": f"Error de base de datos: {e.msg}"}), 500
 
-    # Manejar cualquier otra excepción no controlada
-    # En un entorno de producción, es importante no exponer detalles del error.
-    # Aquí se podría registrar el error en un archivo de logs.
     print(f"Error no controlado: {e}")  # Para depuración
     return jsonify({"error": "Ocurrió un error interno en el servidor."}), 500
 
@@ -56,8 +55,10 @@ def handle_exception(e):
 # Registrar Blueprints
 app.register_blueprint(daycares_bp)
 app.register_blueprint(users_bp)
+app.register_blueprint(smartwatches_bp)
 app.register_blueprint(auth_bp)
-
+app.register_blueprint(readings_bp)
+app.register_blueprint(children_bp)
 
 # Ruta de bienvenida
 @app.route('/')
