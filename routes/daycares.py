@@ -62,7 +62,7 @@ def get_daycare(id_daycare):
 # --- Rutas Protegidas (requieren token) ---
 
 @daycares_bp.route('/', methods=['POST'])
-@jwt_required()
+#@jwt_required()
 def create_daycare():
     """
     Crear una nueva guardería
@@ -106,7 +106,7 @@ def create_daycare():
 
 
 @daycares_bp.route('/<int:id_daycare>', methods=['PUT'])
-@jwt_required()
+#@jwt_required()
 def update_daycare(id_daycare):
     """
     Actualizar una guardería
@@ -151,7 +151,7 @@ def update_daycare(id_daycare):
 
 
 @daycares_bp.route('/<int:id_daycare>', methods=['DELETE'])
-@jwt_required()
+#@jwt_required()
 def delete_daycare(id_daycare):
     """
     Eliminar una guardería
