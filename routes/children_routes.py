@@ -6,6 +6,102 @@ import datetime
 
 children_bp = Blueprint('children', __name__, url_prefix='/api')
 
+@children_bp.route('/children', methods=['GET'])
+def get_all_children():
+    """
+    Obtener todos los niños con relaciones
+    ---
+    tags:
+      - Children
+    summary: "Obtiene todos los niños con información de guardería, tutor, cuidador y smartwatch."
+    description: "Retorna un arreglo de niños con datos enriquecidos provenientes de las tablas relacionadas (daycares, users y smartwatches)."
+    responses:
+      '200':
+        description: "Lista de niños con relaciones."
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id_child:
+                    type: integer
+                    description: "ID del niño"
+                    example: 7
+                  child_first_name:
+                    type: string
+                    description: "Nombre del niño"
+                    example: "Sofía"
+                  child_last_name:
+                    type: string
+                    description: "Apellido del niño"
+                    example: "López"
+                  birth_date:
+                    type: string
+                    format: date
+                    description: "Fecha de nacimiento"
+                    example: "2020-06-15"
+                  daycare_name:
+                    type: string
+                    description: "Nombre de la guardería"
+                    example: "Pequeños Gigantes"
+                  tutor_first_name:
+                    type: string
+                    description: "Nombre del tutor"
+                    example: "María"
+                  tutor_last_name:
+                    type: string
+                    description: "Apellido del tutor"
+                    example: "García"
+                  caregiver_first_name:
+                    type: string
+                    nullable: true
+                    description: "Nombre del cuidador (puede ser nulo)"
+                    example: "Carlos"
+                  caregiver_last_name:
+                    type: string
+                    nullable: true
+                    description: "Apellido del cuidador (puede ser nulo)"
+                    example: "Ramírez"
+                  device_id:
+                    type: string
+                    description: "Identificador del smartwatch asignado"
+                    example: "SW-ABC123"
+                  smartwatch_model:
+                    type: string
+                    description: "Modelo del smartwatch"
+                    example: "KidsSafe v2"
+            examples:
+              ejemplo:
+                summary: "Ejemplo de respuesta"
+                value:
+                  - id_child: 7
+                    child_first_name: "Sofía"
+                    child_last_name: "López"
+                    birth_date: "2020-06-15"
+                    daycare_name: "Pequeños Gigantes"
+                    tutor_first_name: "María"
+                    tutor_last_name: "García"
+                    caregiver_first_name: "Carlos"
+                    caregiver_last_name: "Ramírez"
+                    device_id: "SW-ABC123"
+                    smartwatch_model: "KidsSafe v2"
+                  - id_child: 8
+                    child_first_name: "Diego"
+                    child_last_name: "Pérez"
+                    birth_date: "2019-11-02"
+                    daycare_name: "Pequeños Gigantes"
+                    tutor_first_name: "Luis"
+                    tutor_last_name: "Pérez"
+                    caregiver_first_name: null
+                    caregiver_last_name: null
+                    device_id: "SW-XYZ789"
+                    smartwatch_model: "AngelCare Band"
+    """
+    data = ChildModel.get_all_with_relations()
+    return jsonify(data)
+
 @children_bp.route('/teachers/<int:teacher_id>/children', methods=['GET'])
 # @jwt_required()
 def get_children_by_teacher(teacher_id):

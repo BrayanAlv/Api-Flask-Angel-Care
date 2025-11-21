@@ -143,3 +143,68 @@ def deactivate_smartwatch(smartwatch_id):
     if SmartwatchModel.deactivate(smartwatch_id):
         return jsonify({"message": "Smartwatch desactivado"})
     return jsonify({"error": "Smartwatch no encontrado o no se pudo actualizar"}), 404
+
+@smartwatches_bp.route('/<int:smartwatch_id>', methods=['DELETE'])
+def delete_smartwatch(smartwatch_id):
+    """
+    Eliminar un smartwatch
+    ---
+    tags:
+      - Smartwatches
+    summary: "Elimina un smartwatch de la base de datos por su ID."
+    parameters:
+      - name: smartwatch_id
+        in: path
+        required: true
+        description: "ID del smartwatch a eliminar."
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: "Smartwatch eliminado exitosamente."
+      '404':
+        description: "Smartwatch no encontrado."
+    """
+    # Desasignar de niños y luego eliminar
+    if SmartwatchModel.safe_delete(smartwatch_id):
+        return jsonify({"message": "Smartwatch eliminado"})
+    return jsonify({"error": "Smartwatch no encontrado"}), 404
+
+
+@smartwatches_bp.route('/<int:smartwatch_id>', methods=['PATCH'])
+def update_smartwatch(smartwatch_id):
+    """
+    Actualizar un smartwatch (status y model)
+    ---
+    tags:
+      - Smartwatches
+    summary: "Actualiza los campos status y model de un smartwatch."
+    parameters:
+      - name: smartwatch_id
+        in: path
+        required: true
+        description: "ID del smartwatch a actualizar."
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status: {type: string}
+              model: {type: string}
+    responses:
+      '200':
+        description: "Smartwatch actualizado."
+      '404':
+        description: "Smartwatch no encontrado."
+    """
+    data = request.get_json() or {}
+    status = data.get('status')
+    model = data.get('model')
+    updated = SmartwatchModel.update(smartwatch_id, status=status, model=model)
+    if updated:
+        return jsonify({"message": "Smartwatch actualizado"})
+    return jsonify({"error": "Smartwatch no encontrado o sin cambios"}), 404

@@ -6,6 +6,9 @@ QUERY_GET_BY_ID = "SELECT * FROM smartwatches WHERE id_smartwatch = %s"
 QUERY_GET_BY_CHILD_ID = "SELECT * FROM smartwatches WHERE id_child = %s"
 QUERY_INSERT = "INSERT INTO smartwatches (device_id, model, status) VALUES (%s, %s, %s)"
 QUERY_DEACTIVATE = "UPDATE smartwatches SET status = 'inactive' WHERE id_smartwatch = %s"
+QUERY_DELETE = "DELETE FROM smartwatches WHERE id_smartwatch = %s"
+QUERY_UPDATE = "UPDATE smartwatches SET status = %s, model = %s WHERE id_smartwatch = %s"
+QUERY_UNLINK_FROM_CHILDREN = "UPDATE children SET id_smartwatch = NULL WHERE id_smartwatch = %s"
 
 
 class SmartwatchModel:
@@ -97,3 +100,56 @@ class SmartwatchModel:
         except Exception as e:
             print(f"Error en get_details_with_child: {e}")
             return None
+
+    @staticmethod
+    def delete(smartwatch_id):
+        """Elimina un smartwatch y sus detalles asociados."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(QUERY_DELETE, (smartwatch_id,))
+                    conn.commit()
+                    return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error en delete: {e}")
+            return False
+
+    @staticmethod
+    def safe_delete(smartwatch_id):
+        """Desasigna el smartwatch de cualquier niño y luego elimina el registro."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Primero quitar la referencia en children
+                    cursor.execute(QUERY_UNLINK_FROM_CHILDREN, (smartwatch_id,))
+                    # Luego eliminar el smartwatch
+                    cursor.execute(QUERY_DELETE, (smartwatch_id,))
+                    conn.commit()
+                    return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error en safe_delete: {e}")
+            return False
+
+    @staticmethod
+    def update(smartwatch_id, status=None, model=None):
+        """Actualiza los campos status y model de un smartwatch."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Si no se proporcionan ambos campos, obtener los actuales para mantenerlos
+                    if status is None or model is None:
+                        cursor.execute(QUERY_GET_BY_ID, (smartwatch_id,))
+                        current = cursor.fetchone()
+                        if not current:
+                            return False
+                        if status is None:
+                            status = current[3] if not isinstance(current, dict) else current.get('status')
+                        if model is None:
+                            model = current[2] if not isinstance(current, dict) else current.get('model')
+                    cursor.execute(QUERY_UPDATE, (status, model, smartwatch_id))
+                    conn.commit()
+                    return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error en update: {e}")
+            return False
+

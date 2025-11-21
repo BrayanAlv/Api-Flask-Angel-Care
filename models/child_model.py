@@ -1,6 +1,30 @@
 from db import get_db_connection
 
 # --- Consultas SQL para el Modelo Child ---
+GET_ALL_CHILDREN_WITH_RELATIONS = """
+    SELECT
+        c.id_child,
+        c.first_name AS child_first_name,
+        c.last_name AS child_last_name,
+        c.birth_date,
+        d.name AS daycare_name,
+        t.first_name AS tutor_first_name,
+        t.last_name AS tutor_last_name,
+        ca.first_name AS caregiver_first_name,
+        ca.last_name AS caregiver_last_name,
+        s.device_id,
+        s.model AS smartwatch_model
+    FROM
+        children c
+    JOIN
+        daycares d ON c.id_daycare = d.id_daycare
+    JOIN
+        users t ON c.id_tutor = t.id_user
+    JOIN
+        smartwatches s ON c.id_smartwatch = s.id_smartwatch
+    LEFT JOIN
+        users ca ON c.id_caregiver = ca.id_user;
+"""
 GET_CHILDREN_BY_TEACHER = """
     SELECT c.id_child, c.first_name, c.last_name, c.birth_date
     FROM children c
@@ -35,6 +59,17 @@ GET_SENSOR_AVERAGES_BY_DATE = """
 
 
 class ChildModel:
+    @staticmethod
+    def get_all_with_relations():
+        """Obtiene todos los niños con información relacionada (guardería, tutor, cuidador y smartwatch)."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(dictionary=True) as cursor:
+                    cursor.execute(GET_ALL_CHILDREN_WITH_RELATIONS)
+                    return cursor.fetchall()
+        except Exception as e:
+            print(f"Error en get_all_with_relations: {e}")
+            return []
     @staticmethod
     def get_by_teacher_id(teacher_id):
         """Obtiene la lista de niños supervisados por un profesor."""

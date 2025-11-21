@@ -16,6 +16,8 @@ from routes.users import users_bp
 from routes.auth import auth_bp
 from routes.smartwatch import smartwatches_bp
 from routes.reading import readings_bp
+from routes.medications import medications_bp
+from routes.schedules import schedules_bp
 from routes.children_routes import children_bp
 
 # Crear la instancia de la aplicación
@@ -59,6 +61,8 @@ app.register_blueprint(smartwatches_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(readings_bp)
 app.register_blueprint(children_bp)
+app.register_blueprint(medications_bp)
+app.register_blueprint(schedules_bp)
 
 # Ruta de bienvenida
 @app.route('/')
