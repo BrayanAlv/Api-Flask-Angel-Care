@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 import mysql.connector
 import os # <--- Importa os
 from flask_jwt_extended import JWTManager
+from flask.json.provider import DefaultJSONProvider
+from datetime import datetime, date, time, timedelta
+from decimal import Decimal
 
 from routes.smartwatch import smartwatches_bp
 
@@ -36,6 +39,29 @@ app.config['SWAGGER'] = {
     'description': 'API con capas separadas para gestionar guarderías y usuarios.'
 }
 swagger = Swagger(app)
+
+# --- JSON Provider personalizado para serializar tipos no soportados ---
+class CustomJSONProvider(DefaultJSONProvider):
+    def default(self, obj):
+        # Fechas y datetimes en ISO 8601
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        # time a HH:MM:SS
+        if isinstance(obj, time):
+            return obj.strftime('%H:%M:%S')
+        # mysql.connector devuelve TIME como timedelta
+        if isinstance(obj, timedelta):
+            total_seconds = int(obj.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        # Decimales a float
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
+
+app.json = CustomJSONProvider(app)
 
 # --- Manejadores de Errores Globales ---
 @app.errorhandler(404)
