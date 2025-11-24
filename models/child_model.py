@@ -28,7 +28,7 @@ GET_ALL_CHILDREN_WITH_RELATIONS = """
 GET_CHILDREN_BY_TEACHER = """
     SELECT c.id_child, c.first_name, c.last_name, c.birth_date
     FROM children c
-    JOIN users u ON c.id_daycare = u.id_daycare
+    JOIN users u ON c.id_caregiver = u.id_user
     WHERE u.id_user = %s AND u.role = 'caregiver';
 """
 GET_CHILD_DETAILS = "SELECT * FROM children WHERE id_child = %s;"
