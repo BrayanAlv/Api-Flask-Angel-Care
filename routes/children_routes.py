@@ -102,20 +102,20 @@ def get_all_children():
     data = ChildModel.get_all_with_relations()
     return jsonify(data)
 
-@children_bp.route('/teachers/<int:teacher_id>/children', methods=['GET'])
+@children_bp.route('/caregiver/<int:caregiver_id>/children', methods=['GET'])
 # @jwt_required()
-def get_children_by_teacher(teacher_id):
+def get_children_by_caregiver(caregiver_id):
     """
     Listado de niños por cuidador
     ---
     tags:
-      - Teachers
+      - caregiver
     summary: "Obtiene la lista de niños asignados a la guardería de un cuidador específico."
     parameters:
-      - name: teacher_id
+      - name: caregiver_id
         in: path
         required: true
-        description: "ID del cuidador (teacher)."
+        description: "ID del cuidador (caregiver)."
         schema:
           type: integer
     responses:
@@ -133,7 +133,7 @@ def get_children_by_teacher(teacher_id):
                   last_name: {type: string}
                   birth_date: {type: string, format: date}
     """
-    children = ChildModel.get_by_teacher_id(teacher_id)
+    children = ChildModel.get_by_caregiver_id(caregiver_id)
     return jsonify(children)
 
 
@@ -256,15 +256,15 @@ def get_tutor_by_child(child_id):
     return jsonify({"error": "Tutor no encontrado para este niño"}), 404
 
 
-@children_bp.route('/children/<int:child_id>/teachers', methods=['GET'])
+@children_bp.route('/children/<int:child_id>/caregiver', methods=['GET'])
 # @jwt_required()
-def get_teachers_by_child(child_id):
+def get_caregiver_by_child(child_id):
     """
     Obtener datos de los cuidadores del niño
     ---
     tags:
       - Children
-    summary: "Obtiene una lista de los cuidadores (teachers) de la guardería a la que asiste el niño."
+    summary: "Obtiene una lista de los cuidadores (caregiver) de la guardería a la que asiste el niño."
     parameters:
       - name: child_id
         in: path
@@ -287,8 +287,8 @@ def get_teachers_by_child(child_id):
                   email: {type: string, format: email}
                   daycare_phone: {type: string}
     """
-    teachers = ChildModel.get_teachers_by_child_id(child_id)
-    return jsonify(teachers)
+    caregiver = ChildModel.get_caregiver_by_child_id(child_id)
+    return jsonify(caregiver)
 
 
 @children_bp.route('/children/<int:child_id>/sensors/average', methods=['GET'])

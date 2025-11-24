@@ -25,12 +25,15 @@ GET_ALL_CHILDREN_WITH_RELATIONS = """
     LEFT JOIN
         users ca ON c.id_caregiver = ca.id_user;
 """
-GET_CHILDREN_BY_TEACHER = """
+
+# CAMBIO: Nombre de la constante y semántica
+GET_CHILDREN_BY_CAREGIVER = """
     SELECT c.id_child, c.first_name, c.last_name, c.birth_date
     FROM children c
     JOIN users u ON c.id_caregiver = u.id_user
     WHERE u.id_user = %s AND u.role = 'caregiver';
 """
+
 GET_CHILD_DETAILS = "SELECT * FROM children WHERE id_child = %s;"
 
 GET_TUTOR_BY_CHILD = """
@@ -40,11 +43,12 @@ GET_TUTOR_BY_CHILD = """
     WHERE c.id_child = %s;
 """
 
-GET_TEACHERS_BY_CHILD = """
+# CAMBIO: Nombre de la constante y filtro 'role'
+GET_CAREGIVERS_BY_CHILD = """
     SELECT u.first_name, u.last_name, u.email, d.phone AS daycare_phone
     FROM users u
     JOIN daycares d ON u.id_daycare = d.id_daycare
-    WHERE u.role = 'teacher' AND u.id_daycare = (SELECT id_daycare FROM children WHERE id_child = %s);
+    WHERE u.role = 'caregiver' AND u.id_daycare = (SELECT id_daycare FROM children WHERE id_child = %s);
 """
 
 GET_SENSOR_AVERAGES_BY_DATE = """
@@ -77,16 +81,18 @@ class ChildModel:
         except Exception as e:
             print(f"Error en get_all_with_relations: {e}")
             return []
+
+    # CAMBIO: Nombre del método y argumento
     @staticmethod
-    def get_by_teacher_id(teacher_id):
-        """Obtiene la lista de niños supervisados por un profesor."""
+    def get_by_caregiver_id(caregiver_id):
+        """Obtiene la lista de niños supervisados por un cuidador (caregiver)."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
-                    cursor.execute(GET_CHILDREN_BY_TEACHER, (teacher_id,))
+                    cursor.execute(GET_CHILDREN_BY_CAREGIVER, (caregiver_id,))
                     return cursor.fetchall()
         except Exception as e:
-            print(f"Error en get_by_teacher_id: {e}")
+            print(f"Error en get_by_caregiver_id: {e}")
             return []
 
     @staticmethod
@@ -113,16 +119,17 @@ class ChildModel:
             print(f"Error en get_tutor_by_child_id: {e}")
             return None
 
+    # CAMBIO: Nombre del método
     @staticmethod
-    def get_teachers_by_child_id(child_id):
-        """Obtiene la lista de profesores de la guardería de un niño."""
+    def get_caregivers_by_child_id(child_id):
+        """Obtiene la lista de cuidadores (caregivers) de la guardería de un niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
-                    cursor.execute(GET_TEACHERS_BY_CHILD, (child_id,))
+                    cursor.execute(GET_CAREGIVERS_BY_CHILD, (child_id,))
                     return cursor.fetchall()
         except Exception as e:
-            print(f"Error en get_teachers_by_child_id: {e}")
+            print(f"Error en get_caregivers_by_child_id: {e}")
             return []
 
     @staticmethod

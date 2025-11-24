@@ -29,7 +29,7 @@ def get_users():
                   first_name: {type: string}
                   last_name: {type: string}
                   email: {type: string}
-                  role: {type: string, enum: ['admin', 'teacher', 'tutor']}
+                  role: {type: string, enum: ['admin', 'caregiver', 'tutor']}
                   created_at: {type: string, format: date-time}
     """
     users = UserModel.get_all()
@@ -101,7 +101,7 @@ def create_user():
                 example: "juan.perez@example.com"
               role:
                 type: string
-                enum: ['admin', 'teacher', 'tutor']
+                enum: ['admin', 'caregiver', 'tutor']
                 example: "tutor"
             required:
               - username
@@ -155,7 +155,7 @@ def update_user(id_user):
               first_name: {type: string}
               last_name: {type: string}
               email: {type: string, format: email}
-              role: {type: string, enum: ['admin', 'teacher', 'tutor']}
+              role: {type: string, enum: ['admin', 'caregiver', 'tutor']}
             required:
               - username
               - first_name

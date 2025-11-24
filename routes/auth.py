@@ -13,7 +13,7 @@ def login():
     ---
     tags:
       - Auth
-    summary: "Autentica un usuario y devuelve un token JWT."
+    summary: "Autentica un usuario y devuelve un token JWT junto con su info."
     requestBody:
       required: true
       content:
@@ -34,6 +34,22 @@ def login():
     responses:
       '200':
         description: "Autenticación exitosa."
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                user:
+                  type: object
+                  properties:
+                    id_user:
+                      type: integer
+                    role:
+                      type: string
+                    username:
+                      type: string
       '401':
         description: "Credenciales inválidas."
     """
@@ -44,15 +60,24 @@ def login():
     if not username or not password:
         return jsonify({"error": "Username y password son requeridos"}), 400
 
-    # 1. Buscar al usuario en la base de datos
+    # 1. Buscar al usuario
     user = UserModel.get_by_username(username)
 
-    # 2. Verificar si el usuario existe y la contraseña es correcta
+    # 2. Verificar password
     if user and check_password_hash(user['password'], password):
-        # 3. Crear el token si las credenciales son válidas
-        # La 'identity' es lo que se guardará dentro del token para identificar al usuario.
-        # Usar el ID del usuario es una práctica común.
-        access_token = create_access_token(identity=user['id_user'])
-        return jsonify(access_token=access_token)
+        
+        # 3. Crear token (puedes agregar claims adicionales si quieres)
+        # Es útil guardar el rol dentro del token también para validaciones en el backend
+        access_token = create_access_token(identity=user['id_user'], additional_claims={"role": user['role']})
+        
+        # 4. RETORNAR TOKEN + DATOS DEL USUARIO
+        return jsonify({
+            "access_token": access_token,
+            "user": {
+                "id_user": user['id_user'],
+                "role": user['role'],
+              
+            }
+        }), 200
 
     return jsonify({"error": "Credenciales inválidas"}), 401
