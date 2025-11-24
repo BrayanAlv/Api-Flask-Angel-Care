@@ -287,7 +287,7 @@ def get_caregiver_by_child(child_id):
                   email: {type: string, format: email}
                   daycare_phone: {type: string}
     """
-    caregiver = ChildModel.get_caregiver_by_child_id(child_id)
+    caregiver = ChildModel.get_caregivers_by_child_id(child_id)
     return jsonify(caregiver)
 
 
