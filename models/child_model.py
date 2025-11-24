@@ -29,7 +29,7 @@ GET_CHILDREN_BY_TEACHER = """
     SELECT c.id_child, c.first_name, c.last_name, c.birth_date
     FROM children c
     JOIN users u ON c.id_daycare = u.id_daycare
-    WHERE u.id_user = %s AND u.role = 'teacher';
+    WHERE u.id_user = %s AND u.role = 'caregiver';
 """
 GET_CHILD_DETAILS = "SELECT * FROM children WHERE id_child = %s;"
 
@@ -56,6 +56,13 @@ GET_SENSOR_AVERAGES_BY_DATE = """
     FROM children c
     WHERE c.id_child = %s;
 """
+
+CREATE_CHILD = """
+    INSERT INTO children (first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch, id_caregiver)
+    VALUES (%s, %s, %s, %s, %s, %s, %s);
+"""
+
+UPDATE_CHILD_BASE = "UPDATE children SET {set_clause} WHERE id_child = %s;"
 
 
 class ChildModel:
@@ -129,4 +136,55 @@ class ChildModel:
                     return cursor.fetchone()
         except Exception as e:
             print(f"Error en get_sensor_averages: {e}")
+            return None
+
+    @staticmethod
+    def create_child(first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch=None, id_caregiver=None):
+        """Crea un nuevo niño y devuelve su registro completo."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        CREATE_CHILD,
+                        (
+                            first_name,
+                            last_name,
+                            birth_date,
+                            id_daycare,
+                            id_tutor,
+                            id_smartwatch,
+                            id_caregiver,
+                        ),
+                    )
+                    child_id = cursor.lastrowid
+                conn.commit()
+            # devolver detalles completos
+            return ChildModel.get_details_by_id(child_id)
+        except Exception as e:
+            print(f"Error en create_child: {e}")
+            return None
+
+    @staticmethod
+    def update_child(child_id, fields):
+        """Actualiza campos del niño indicado. 'fields' es un dict de columnas permitidas."""
+        if not fields:
+            return None
+        allowed = {"first_name", "last_name", "birth_date", "id_daycare", "id_tutor", "id_smartwatch", "id_caregiver"}
+        set_parts = []
+        values = []
+        for key, val in fields.items():
+            if key in allowed:
+                set_parts.append(f"{key} = %s")
+                values.append(val)
+        if not set_parts:
+            return None
+        query = UPDATE_CHILD_BASE.format(set_clause=", ".join(set_parts))
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, (*values, child_id))
+                conn.commit()
+            return ChildModel.get_details_by_id(child_id)
+        except Exception as e:
+            print(f"Error en update_child: {e}")
             return None

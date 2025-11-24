@@ -346,3 +346,113 @@ def get_sensor_averages(child_id):
     if averages:
         return jsonify(averages)
     return jsonify({"error": "No se encontraron datos para este niño en la fecha especificada"}), 404
+
+
+@children_bp.route('/children', methods=['POST'])
+# @jwt_required()
+def create_child():
+    """
+    Crear un nuevo niño y asignar tutor (y opcionalmente cuidador y smartwatch)
+    ---
+    tags:
+      - Children
+    summary: "Crea un nuevo niño y lo asocia con un tutor."
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [first_name, last_name, birth_date, id_daycare, id_tutor]
+            properties:
+              first_name: {type: string}
+              last_name: {type: string}
+              birth_date: {type: string, format: date}
+              id_daycare: {type: integer}
+              id_tutor: {type: integer}
+              id_smartwatch: {type: integer, nullable: true}
+              id_caregiver: {type: integer, nullable: true}
+    responses:
+      '201':
+        description: "Niño creado exitosamente."
+      '400':
+        description: "Datos inválidos o faltantes."
+    """
+    body = request.get_json(silent=True) or {}
+    required = ["first_name", "last_name", "birth_date", "id_daycare", "id_tutor"]
+    missing = [k for k in required if not body.get(k)]
+    if missing:
+        return jsonify({"error": f"Faltan campos requeridos: {', '.join(missing)}"}), 400
+    # validar fecha
+    try:
+        datetime.date.fromisoformat(body["birth_date"])
+    except Exception:
+        return jsonify({"error": "Formato de fecha inválido en 'birth_date'. Use YYYY-MM-DD."}), 400
+
+    child = ChildModel.create_child(
+        first_name=body["first_name"],
+        last_name=body["last_name"],
+        birth_date=body["birth_date"],
+        id_daycare=body["id_daycare"],
+        id_tutor=body["id_tutor"],
+        id_smartwatch=body.get("id_smartwatch"),
+        id_caregiver=body.get("id_caregiver"),
+    )
+    if not child:
+        return jsonify({"error": "No se pudo crear el niño."}), 400
+    return jsonify(child), 201
+
+
+@children_bp.route('/children/<int:child_id>', methods=['PATCH'])
+# @jwt_required()
+def update_child(child_id):
+    """
+    Actualizar datos de un niño
+    ---
+    tags:
+      - Children
+    summary: "Actualiza datos del niño (parcial o completo)."
+    parameters:
+      - name: child_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              first_name: {type: string}
+              last_name: {type: string}
+              birth_date: {type: string, format: date}
+              id_daycare: {type: integer}
+              id_tutor: {type: integer}
+              id_smartwatch: {type: integer}
+              id_caregiver: {type: integer}
+    responses:
+      '200':
+        description: "Datos actualizados."
+      '400':
+        description: "Solicitud inválida."
+      '404':
+        description: "Niño no encontrado."
+    """
+    body = request.get_json(silent=True) or {}
+
+    if "birth_date" in body:
+        try:
+            datetime.date.fromisoformat(body["birth_date"])
+        except Exception:
+            return jsonify({"error": "Formato de fecha inválido en 'birth_date'. Use YYYY-MM-DD."}), 400
+
+    updated = ChildModel.update_child(child_id, body)
+    if not updated:
+        # comprobar si el niño existe
+        exists = ChildModel.get_details_by_id(child_id)
+        if not exists:
+            return jsonify({"error": "Niño no encontrado"}), 404
+        return jsonify({"error": "No hay cambios aplicables o datos inválidos"}), 400
+    return jsonify(updated)
