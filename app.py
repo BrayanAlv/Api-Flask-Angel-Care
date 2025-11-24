@@ -2,16 +2,9 @@ from flask import Flask, jsonify
 from flasgger import Swagger
 from dotenv import load_dotenv
 import mysql.connector
-import os # <--- Importa os
+import os
 from flask_jwt_extended import JWTManager
-from flask.json.provider import DefaultJSONProvider
-from datetime import datetime, date, time, timedelta
-from decimal import Decimal
-
-from routes.smartwatch import smartwatches_bp
-
-# Cargar variables de entorno
-load_dotenv()
+from flask_cors import CORS 
 
 # Importar Blueprints
 from routes.daycares import daycares_bp
@@ -19,16 +12,21 @@ from routes.users import users_bp
 from routes.auth import auth_bp
 from routes.smartwatch import smartwatches_bp
 from routes.reading import readings_bp
-from routes.medications import medications_bp
-from routes.schedules import schedules_bp
 from routes.children_routes import children_bp
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Crear la instancia de la aplicación
 app = Flask(__name__)
 
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY") # Carga la clave
-jwt = JWTManager(app) # Inicializa JWT
+# --- CONFIGURACIÓN CORS ---
+# Se habilita CORS para todas las rutas y todos los origenes (*)
+# Esto permite que frontends en otros dominios o IPs consuman la API sin bloqueo.
+CORS(app, resources={r"/*": {"origins": "*"}})
 
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+jwt = JWTManager(app)
 
 # Configuración de Swagger
 app.config['SWAGGER'] = {
@@ -39,29 +37,6 @@ app.config['SWAGGER'] = {
     'description': 'API con capas separadas para gestionar guarderías y usuarios.'
 }
 swagger = Swagger(app)
-
-# --- JSON Provider personalizado para serializar tipos no soportados ---
-class CustomJSONProvider(DefaultJSONProvider):
-    def default(self, obj):
-        # Fechas y datetimes en ISO 8601
-        if isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        # time a HH:MM:SS
-        if isinstance(obj, time):
-            return obj.strftime('%H:%M:%S')
-        # mysql.connector devuelve TIME como timedelta
-        if isinstance(obj, timedelta):
-            total_seconds = int(obj.total_seconds())
-            hours = total_seconds // 3600
-            minutes = (total_seconds % 3600) // 60
-            seconds = total_seconds % 60
-            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-        # Decimales a float
-        if isinstance(obj, Decimal):
-            return float(obj)
-        return super().default(obj)
-
-app.json = CustomJSONProvider(app)
 
 # --- Manejadores de Errores Globales ---
 @app.errorhandler(404)
@@ -76,7 +51,7 @@ def handle_exception(e):
             return jsonify({"error": "Conflicto: El registro ya existe."}), 409
         return jsonify({"error": f"Error de base de datos: {e.msg}"}), 500
 
-    print(f"Error no controlado: {e}")  # Para depuración
+    print(f"Error no controlado: {e}")
     return jsonify({"error": "Ocurrió un error interno en el servidor."}), 500
 
 
@@ -87,8 +62,6 @@ app.register_blueprint(smartwatches_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(readings_bp)
 app.register_blueprint(children_bp)
-app.register_blueprint(medications_bp)
-app.register_blueprint(schedules_bp)
 
 # Ruta de bienvenida
 @app.route('/')
@@ -98,4 +71,5 @@ def index():
 
 # Punto de entrada
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # host='0.0.0.0' hace que el servidor sea visible en la red local
+    app.run(debug=True, host='0.0.0.0', port=5000)
