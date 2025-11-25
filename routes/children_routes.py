@@ -550,3 +550,333 @@ def update_child(child_id):
             return jsonify({"error": "Niño no encontrado"}), 404
         return jsonify({"error": "No hay cambios aplicables o datos inválidos"}), 400
     return jsonify(updated)
+
+
+# --- RUTAS PARA NOTAS (CRUD COMPLETO) ---
+
+@children_bp.route('/children/<int:child_id>/notes', methods=['GET'])
+# @jwt_required()
+def get_child_notes(child_id):
+    """
+    Obtener las notas/reportes de un niño
+    ---
+    tags:
+      - Children Notes
+    summary: "Obtiene el historial de notas, incidentes o reportes de un niño."
+    parameters:
+      - name: child_id
+        in: path
+        required: true
+        description: "ID del niño."
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: "Lista de notas obtenida exitosamente."
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id_note: {type: integer}
+                  title: {type: string}
+                  content: {type: string}
+                  priority: {type: string, enum: [low, medium, high]}
+                  created_at: {type: string, format: date-time}
+                  author_first_name: {type: string}
+                  author_last_name: {type: string}
+                  author_role: {type: string}
+    """
+    notes = ChildModel.get_notes(child_id)
+    return jsonify(notes)
+
+
+@children_bp.route('/children/<int:child_id>/notes', methods=['POST'])
+# @jwt_required()
+def create_child_note(child_id):
+    """
+    Crear una nota para un niño
+    ---
+    tags:
+      - Children Notes
+    summary: "Agrega una nota, reporte o incidente al historial del niño."
+    parameters:
+      - name: child_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [id_author, title, content, priority]
+            properties:
+              id_author:
+                type: integer
+                description: "ID del usuario que escribe la nota (profesor o admin)"
+              title:
+                type: string
+                example: "No quiso comer"
+              content:
+                type: string
+                example: "El niño rechazó las verduras durante el almuerzo."
+              priority:
+                type: string
+                enum: [low, medium, high]
+                example: "medium"
+    responses:
+      '201':
+        description: "Nota creada exitosamente."
+      '400':
+        description: "Datos faltantes o prioridad inválida."
+    """
+    body = request.get_json(silent=True) or {}
+    
+    required = ["id_author", "title", "content", "priority"]
+    missing = [k for k in required if not body.get(k)]
+    if missing:
+        return jsonify({"error": f"Faltan campos requeridos: {', '.join(missing)}"}), 400
+
+    valid_priorities = ["low", "medium", "high"]
+    if body["priority"] not in valid_priorities:
+        return jsonify({"error": f"Prioridad inválida. Use: {', '.join(valid_priorities)}"}), 400
+
+    note_id = ChildModel.create_note(
+        child_id=child_id,
+        id_author=body["id_author"],
+        title=body["title"],
+        content=body["content"],
+        priority=body["priority"]
+    )
+
+    if note_id:
+        return jsonify({"message": "Nota creada exitosamente", "id_note": note_id}), 201
+    
+    return jsonify({"error": "No se pudo crear la nota. Verifique que el autor y el niño existan."}), 400
+
+
+@children_bp.route('/notes/<int:note_id>', methods=['PATCH'])
+# @jwt_required()
+def update_child_note(note_id):
+    """
+    Actualizar una nota existente
+    ---
+    tags:
+      - Children Notes
+    summary: "Edita el título, contenido o prioridad de una nota."
+    parameters:
+      - name: note_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title: {type: string}
+              content: {type: string}
+              priority: {type: string, enum: [low, medium, high]}
+    responses:
+      '200':
+        description: "Nota actualizada correctamente."
+      '400':
+        description: "Datos inválidos o sin cambios."
+      '404':
+        description: "Nota no encontrada."
+    """
+    body = request.get_json(silent=True) or {}
+    
+    if "priority" in body:
+        valid_priorities = ["low", "medium", "high"]
+        if body["priority"] not in valid_priorities:
+             return jsonify({"error": f"Prioridad inválida. Use: {', '.join(valid_priorities)}"}), 400
+
+    existing_note = ChildModel.get_note_by_id(note_id)
+    if not existing_note:
+        return jsonify({"error": "Nota no encontrada"}), 404
+
+    success = ChildModel.update_note(note_id, body)
+    
+    if success:
+        updated_note = ChildModel.get_note_by_id(note_id)
+        return jsonify({"message": "Nota actualizada", "note": updated_note})
+    
+    return jsonify({"error": "No se pudieron aplicar los cambios"}), 400
+
+
+@children_bp.route('/notes/<int:note_id>', methods=['DELETE'])
+# @jwt_required()
+def delete_child_note(note_id):
+    """
+    Eliminar una nota
+    ---
+    tags:
+      - Children Notes
+    summary: "Elimina una nota del historial del niño."
+    parameters:
+      - name: note_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: "Nota eliminada correctamente."
+      '404':
+        description: "Nota no encontrada."
+    """
+    existing_note = ChildModel.get_note_by_id(note_id)
+    if not existing_note:
+        return jsonify({"error": "Nota no encontrada"}), 404
+
+    success = ChildModel.delete_note(note_id)
+    
+    if success:
+        return jsonify({"message": "Nota eliminada correctamente"}), 200
+    
+    return jsonify({"error": "Error al eliminar la nota"}), 500
+
+
+# --- NUEVAS RUTAS PARA SCHEDULES (HORARIOS) ---
+
+@children_bp.route('/children/<int:child_id>/schedule', methods=['GET'])
+# @jwt_required()
+def get_child_schedule(child_id):
+    """
+    Obtener el horario semanal del niño
+    ---
+    tags:
+      - Children Schedule
+    summary: "Obtiene las actividades programadas en el horario semanal del niño."
+    parameters:
+      - name: child_id
+        in: path
+        required: true
+        description: "ID del niño."
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: "Lista de actividades obtenida exitosamente."
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id_schedule: {type: integer}
+                  day_of_week: {type: string, enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]}
+                  start_time: {type: string, format: time, example: "09:00"}
+                  end_time: {type: string, format: time, example: "10:00"}
+                  activity_name: {type: string}
+                  description: {type: string}
+    """
+    schedule = ChildModel.get_schedules(child_id)
+    return jsonify(schedule)
+
+
+@children_bp.route('/children/<int:child_id>/schedule', methods=['POST'])
+# @jwt_required()
+def create_child_schedule(child_id):
+    """
+    Agregar actividad al horario
+    ---
+    tags:
+      - Children Schedule
+    summary: "Agrega una nueva actividad al horario semanal."
+    parameters:
+      - name: child_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [day_of_week, start_time, end_time, activity_name]
+            properties:
+              day_of_week: 
+                type: string
+                enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+              start_time: 
+                type: string
+                example: "09:00"
+              end_time: 
+                type: string
+                example: "10:00"
+              activity_name: 
+                type: string
+              description: 
+                type: string
+    responses:
+      '201':
+        description: "Actividad creada."
+      '400':
+        description: "Datos faltantes."
+    """
+    body = request.get_json(silent=True) or {}
+    
+    required = ["day_of_week", "start_time", "end_time", "activity_name"]
+    missing = [k for k in required if not body.get(k)]
+    if missing:
+        return jsonify({"error": f"Faltan campos requeridos: {', '.join(missing)}"}), 400
+
+    schedule_id = ChildModel.create_schedule(
+        child_id=child_id,
+        day_of_week=body["day_of_week"],
+        start_time=body["start_time"],
+        end_time=body["end_time"],
+        activity_name=body["activity_name"],
+        description=body.get("description", "")
+    )
+
+    if schedule_id:
+        return jsonify({"message": "Actividad agregada al horario", "id_schedule": schedule_id}), 201
+    
+    return jsonify({"error": "No se pudo crear la actividad."}), 400
+
+
+@children_bp.route('/schedules/<int:schedule_id>', methods=['DELETE'])
+# @jwt_required()
+def delete_child_schedule(schedule_id):
+    """
+    Eliminar actividad del horario
+    ---
+    tags:
+      - Children Schedule
+    summary: "Elimina una actividad del horario por su ID."
+    parameters:
+      - name: schedule_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: "Actividad eliminada correctamente."
+      '404':
+        description: "Actividad no encontrada."
+    """
+    existing_schedule = ChildModel.get_schedule_by_id(schedule_id)
+    if not existing_schedule:
+        return jsonify({"error": "Actividad no encontrada"}), 404
+
+    success = ChildModel.delete_schedule(schedule_id)
+    
+    if success:
+        return jsonify({"message": "Actividad eliminada correctamente"}), 200
+    
+    return jsonify({"error": "Error al eliminar la actividad"}), 500

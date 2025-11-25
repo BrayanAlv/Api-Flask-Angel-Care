@@ -26,7 +26,6 @@ GET_ALL_CHILDREN_WITH_RELATIONS = """
         users ca ON c.id_caregiver = ca.id_user;
 """
 
-
 GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
     SELECT
         c.id_child,
@@ -38,7 +37,6 @@ GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
         t.last_name AS tutor_last_name,
         ca.first_name AS caregiver_first_name,
         ca.last_name AS caregiver_last_name
-
     FROM
         children c
     JOIN
@@ -49,7 +47,6 @@ GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
         users ca ON c.id_caregiver = ca.id_user;
 """
 
-# CAMBIO: Nombre de la constante y semántica
 GET_CHILDREN_BY_CAREGIVER = """
     SELECT c.id_child, c.first_name, c.last_name, c.birth_date
     FROM children c
@@ -66,7 +63,6 @@ GET_TUTOR_BY_CHILD = """
     WHERE c.id_child = %s;
 """
 
-# CAMBIO: Nombre de la constante y filtro 'role'
 GET_CAREGIVERS_BY_CHILD = """
     SELECT u.first_name, u.last_name, u.email, d.phone AS daycare_phone
     FROM users u
@@ -91,11 +87,59 @@ CREATE_CHILD = """
 
 UPDATE_CHILD_BASE = "UPDATE children SET {set_clause} WHERE id_child = %s;"
 
+# --- Consultas SQL para Notas ---
+GET_NOTES_BY_CHILD = """
+    SELECT 
+        n.id_note, 
+        n.title, 
+        n.content, 
+        n.priority, 
+        n.created_at,
+        u.first_name AS author_first_name, 
+        u.last_name AS author_last_name,
+        u.role AS author_role
+    FROM child_notes n
+    JOIN users u ON n.id_author = u.id_user
+    WHERE n.id_child = %s
+    ORDER BY n.created_at DESC;
+"""
+GET_NOTE_BY_ID = "SELECT * FROM child_notes WHERE id_note = %s;"
+CREATE_NOTE = """
+    INSERT INTO child_notes (id_child, id_author, title, content, priority, created_at)
+    VALUES (%s, %s, %s, %s, %s, NOW());
+"""
+UPDATE_NOTE_BASE = "UPDATE child_notes SET {set_clause} WHERE id_note = %s;"
+DELETE_NOTE = "DELETE FROM child_notes WHERE id_note = %s;"
+
+# --- Consultas SQL para Horarios (Schedules) ---
+# Ordenamos por día (FIELD permite orden personalizado) y luego por hora de inicio
+GET_SCHEDULES_BY_CHILD = """
+    SELECT 
+        id_schedule, 
+        day_of_week, 
+        TIME_FORMAT(start_time, '%H:%i') as start_time, 
+        TIME_FORMAT(end_time, '%H:%i') as end_time, 
+        activity_name, 
+        description
+    FROM weekly_schedules
+    WHERE id_child = %s
+    ORDER BY FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), start_time;
+"""
+
+CREATE_SCHEDULE = """
+    INSERT INTO weekly_schedules (id_child, day_of_week, start_time, end_time, activity_name, description, created_at)
+    VALUES (%s, %s, %s, %s, %s, %s, NOW());
+"""
+
+DELETE_SCHEDULE = "DELETE FROM weekly_schedules WHERE id_schedule = %s;"
+
+GET_SCHEDULE_BY_ID = "SELECT * FROM weekly_schedules WHERE id_schedule = %s;"
+
 
 class ChildModel:
     @staticmethod
     def get_all_with_relations():
-        """Obtiene todos los niños con información relacionada (guardería, tutor, cuidador y smartwatch)."""
+        """Obtiene todos los niños con información relacionada."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -117,10 +161,9 @@ class ChildModel:
             print(f"Error en get_children_with_tutor_caregiver_daycare: {e}")
             return []
 
-    # CAMBIO: Nombre del método y argumento
     @staticmethod
     def get_by_caregiver_id(caregiver_id):
-        """Obtiene la lista de niños supervisados por un cuidador (caregiver)."""
+        """Obtiene la lista de niños supervisados por un cuidador."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -154,7 +197,6 @@ class ChildModel:
             print(f"Error en get_tutor_by_child_id: {e}")
             return None
 
-    # CAMBIO: Nombre del método
     @staticmethod
     def get_caregivers_by_child_id(child_id):
         """Obtiene la lista de cuidadores (caregivers) de la guardería de un niño."""
@@ -173,7 +215,6 @@ class ChildModel:
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
-                    # La fecha se pasa 3 veces para los 3 sub-selects, y el id al final
                     cursor.execute(GET_SENSOR_AVERAGES_BY_DATE, (date_str, date_str, date_str, child_id))
                     return cursor.fetchone()
         except Exception as e:
@@ -200,7 +241,6 @@ class ChildModel:
                     )
                     child_id = cursor.lastrowid
                 conn.commit()
-            # devolver detalles completos
             return ChildModel.get_details_by_id(child_id)
         except Exception as e:
             print(f"Error en create_child: {e}")
@@ -208,7 +248,7 @@ class ChildModel:
 
     @staticmethod
     def update_child(child_id, fields):
-        """Actualiza campos del niño indicado. 'fields' es un dict de columnas permitidas."""
+        """Actualiza campos del niño indicado dinámicamente."""
         if not fields:
             return None
         allowed = {"first_name", "last_name", "birth_date", "id_daycare", "id_tutor", "id_smartwatch", "id_caregiver"}
@@ -230,3 +270,140 @@ class ChildModel:
         except Exception as e:
             print(f"Error en update_child: {e}")
             return None
+
+    # --- MÉTODOS PARA NOTAS ---
+
+    @staticmethod
+    def get_notes(child_id):
+        """Obtiene todas las notas asociadas a un niño."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(dictionary=True) as cursor:
+                    cursor.execute(GET_NOTES_BY_CHILD, (child_id,))
+                    return cursor.fetchall()
+        except Exception as e:
+            print(f"Error en get_notes: {e}")
+            return []
+
+    @staticmethod
+    def get_note_by_id(note_id):
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(dictionary=True) as cursor:
+                    cursor.execute(GET_NOTE_BY_ID, (note_id,))
+                    return cursor.fetchone()
+        except Exception as e:
+            print(f"Error en get_note_by_id: {e}")
+            return None
+
+    @staticmethod
+    def create_note(child_id, id_author, title, content, priority):
+        """Crea una nota nueva para un niño."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(CREATE_NOTE, (child_id, id_author, title, content, priority))
+                    note_id = cursor.lastrowid
+                conn.commit()
+            return note_id
+        except Exception as e:
+            print(f"Error en create_note: {e}")
+            return None
+
+    @staticmethod
+    def update_note(note_id, fields):
+        """Actualiza una nota existente."""
+        if not fields:
+            return None
+        allowed = {"title", "content", "priority"}
+        set_parts = []
+        values = []
+        for key, val in fields.items():
+            if key in allowed:
+                set_parts.append(f"{key} = %s")
+                values.append(val)
+        if not set_parts:
+            return None
+        query = UPDATE_NOTE_BASE.format(set_clause=", ".join(set_parts))
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, (*values, note_id))
+                conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error en update_note: {e}")
+            return False
+
+    @staticmethod
+    def delete_note(note_id):
+        """Elimina una nota por su ID."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(DELETE_NOTE, (note_id,))
+                    if cursor.rowcount == 0:
+                        return False
+                conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error en delete_note: {e}")
+            return False
+
+    # --- MÉTODOS PARA HORARIOS (SCHEDULES) ---
+
+    @staticmethod
+    def get_schedules(child_id):
+        """Obtiene el horario semanal del niño."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(dictionary=True) as cursor:
+                    cursor.execute(GET_SCHEDULES_BY_CHILD, (child_id,))
+                    return cursor.fetchall()
+        except Exception as e:
+            print(f"Error en get_schedules: {e}")
+            return []
+
+    @staticmethod
+    def get_schedule_by_id(schedule_id):
+        """Obtiene una actividad específica del horario por ID."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(dictionary=True) as cursor:
+                    cursor.execute(GET_SCHEDULE_BY_ID, (schedule_id,))
+                    return cursor.fetchone()
+        except Exception as e:
+            print(f"Error en get_schedule_by_id: {e}")
+            return None
+
+    @staticmethod
+    def create_schedule(child_id, day_of_week, start_time, end_time, activity_name, description):
+        """Agrega una nueva actividad al horario del niño."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        CREATE_SCHEDULE, 
+                        (child_id, day_of_week, start_time, end_time, activity_name, description)
+                    )
+                    schedule_id = cursor.lastrowid
+                conn.commit()
+            return schedule_id
+        except Exception as e:
+            print(f"Error en create_schedule: {e}")
+            return None
+
+    @staticmethod
+    def delete_schedule(schedule_id):
+        """Elimina una actividad del horario."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(DELETE_SCHEDULE, (schedule_id,))
+                    if cursor.rowcount == 0:
+                        return False
+                conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error en delete_schedule: {e}")
+            return False
