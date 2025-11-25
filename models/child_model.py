@@ -54,6 +54,21 @@ GET_CHILDREN_BY_CAREGIVER = """
     WHERE u.id_user = %s AND u.role = 'caregiver';
 """
 
+# NUEVA CONSULTA: Niños por Tutor
+GET_CHILDREN_BY_TUTOR = """
+    SELECT 
+        c.id_child, 
+        c.first_name, 
+        c.last_name, 
+        c.birth_date, 
+        d.name AS daycare_name,
+        s.device_id
+    FROM children c
+    JOIN daycares d ON c.id_daycare = d.id_daycare
+    LEFT JOIN smartwatches s ON c.id_smartwatch = s.id_smartwatch
+    WHERE c.id_tutor = %s;
+"""
+
 GET_CHILD_DETAILS = "SELECT * FROM children WHERE id_child = %s;"
 
 GET_TUTOR_BY_CHILD = """
@@ -112,7 +127,6 @@ UPDATE_NOTE_BASE = "UPDATE child_notes SET {set_clause} WHERE id_note = %s;"
 DELETE_NOTE = "DELETE FROM child_notes WHERE id_note = %s;"
 
 # --- Consultas SQL para Horarios (Schedules) ---
-# Ordenamos por día (FIELD permite orden personalizado) y luego por hora de inicio
 GET_SCHEDULES_BY_CHILD = """
     SELECT 
         id_schedule, 
@@ -125,14 +139,11 @@ GET_SCHEDULES_BY_CHILD = """
     WHERE id_child = %s
     ORDER BY FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), start_time;
 """
-
 CREATE_SCHEDULE = """
     INSERT INTO weekly_schedules (id_child, day_of_week, start_time, end_time, activity_name, description, created_at)
     VALUES (%s, %s, %s, %s, %s, %s, NOW());
 """
-
 DELETE_SCHEDULE = "DELETE FROM weekly_schedules WHERE id_schedule = %s;"
-
 GET_SCHEDULE_BY_ID = "SELECT * FROM weekly_schedules WHERE id_schedule = %s;"
 
 
@@ -171,6 +182,18 @@ class ChildModel:
                     return cursor.fetchall()
         except Exception as e:
             print(f"Error en get_by_caregiver_id: {e}")
+            return []
+
+    @staticmethod
+    def get_by_tutor_id(tutor_id):
+        """Obtiene la lista de niños a cargo de un tutor (padre)."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(dictionary=True) as cursor:
+                    cursor.execute(GET_CHILDREN_BY_TUTOR, (tutor_id,))
+                    return cursor.fetchall()
+        except Exception as e:
+            print(f"Error en get_by_tutor_id: {e}")
             return []
 
     @staticmethod

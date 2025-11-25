@@ -231,6 +231,43 @@ def get_children_by_caregiver(caregiver_id):
     return jsonify(children)
 
 
+@children_bp.route('/tutor/<int:tutor_id>/children', methods=['GET'])
+# @jwt_required()
+def get_children_by_tutor(tutor_id):
+    """
+    Listado de niños por tutor (Padre)
+    ---
+    tags:
+      - Children
+    summary: "Obtiene los niños asociados a un tutor específico."
+    parameters:
+      - name: tutor_id
+        in: path
+        required: true
+        description: "ID del tutor (usuario con rol tutor)."
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: "Lista de niños encontrada."
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id_child: {type: integer}
+                  first_name: {type: string}
+                  last_name: {type: string}
+                  birth_date: {type: string, format: date}
+                  daycare_name: {type: string}
+                  device_id: {type: string}
+    """
+    children = ChildModel.get_by_tutor_id(tutor_id)
+    return jsonify(children)
+
+
 @children_bp.route('/children/<int:child_id>', methods=['GET'])
 # @jwt_required()
 def get_child_full_details(child_id):
@@ -746,7 +783,7 @@ def delete_child_note(note_id):
     return jsonify({"error": "Error al eliminar la nota"}), 500
 
 
-# --- NUEVAS RUTAS PARA SCHEDULES (HORARIOS) ---
+# --- RUTAS PARA SCHEDULES (HORARIOS) ---
 
 @children_bp.route('/children/<int:child_id>/schedule', methods=['GET'])
 # @jwt_required()
