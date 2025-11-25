@@ -102,6 +102,100 @@ def get_all_children():
     data = ChildModel.get_all_with_relations()
     return jsonify(data)
 
+@children_bp.route('/children/with-tutor-caregiver', methods=['GET'])
+def get_children_with_tutor_caregiver_daycare():
+    """
+    Niños con guardería, tutor y cuidador (consulta específica)
+    ---
+    tags:
+      - Children
+    summary: "Obtiene los niños con datos de guardería, tutor y cuidador usando la consulta solicitada."
+    description: |
+      Ejecuta exactamente la siguiente consulta SQL para devolver la información solicitada:
+
+      SELECT
+          c.id_child,
+          c.first_name AS child_first_name,
+          c.last_name AS child_last_name,
+          c.birth_date,
+          d.name AS daycare_name,
+          t.first_name AS tutor_first_name,
+          t.last_name AS tutor_last_name,
+          ca.first_name AS caregiver_first_name,
+          ca.last_name AS caregiver_last_name
+
+      FROM
+          children c
+      JOIN
+          daycares d ON c.id_daycare = d.id_daycare
+      JOIN
+          users t ON c.id_tutor = t.id_user
+      JOIN
+          users ca ON c.id_caregiver = ca.id_user;
+    responses:
+      '200':
+        description: "Lista de niños con los campos pedidos."
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id_child:
+                    type: integer
+                    example: 5
+                  child_first_name:
+                    type: string
+                    example: "Ana"
+                  child_last_name:
+                    type: string
+                    example: "Gómez"
+                  birth_date:
+                    type: string
+                    format: date
+                    example: "2020-01-20"
+                  daycare_name:
+                    type: string
+                    example: "Peques House"
+                  tutor_first_name:
+                    type: string
+                    example: "Luis"
+                  tutor_last_name:
+                    type: string
+                    example: "Gómez"
+                  caregiver_first_name:
+                    type: string
+                    example: "Carla"
+                  caregiver_last_name:
+                    type: string
+                    example: "Rojas"
+            examples:
+              ejemplo:
+                summary: "Ejemplo de respuesta"
+                value:
+                  - id_child: 5
+                    child_first_name: "Ana"
+                    child_last_name: "Gómez"
+                    birth_date: "2020-01-20"
+                    daycare_name: "Peques House"
+                    tutor_first_name: "Luis"
+                    tutor_last_name: "Gómez"
+                    caregiver_first_name: "Carla"
+                    caregiver_last_name: "Rojas"
+                  - id_child: 6
+                    child_first_name: "Mario"
+                    child_last_name: "Paz"
+                    birth_date: "2019-10-11"
+                    daycare_name: "Peques House"
+                    tutor_first_name: "Elena"
+                    tutor_last_name: "Paz"
+                    caregiver_first_name: "Hugo"
+                    caregiver_last_name: "Luna"
+    """
+    data = ChildModel.get_children_with_tutor_caregiver_daycare()
+    return jsonify(data)
+
 @children_bp.route('/caregiver/<int:caregiver_id>/children', methods=['GET'])
 # @jwt_required()
 def get_children_by_caregiver(caregiver_id):

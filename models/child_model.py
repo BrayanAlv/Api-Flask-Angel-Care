@@ -26,6 +26,29 @@ GET_ALL_CHILDREN_WITH_RELATIONS = """
         users ca ON c.id_caregiver = ca.id_user;
 """
 
+
+GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
+    SELECT
+        c.id_child,
+        c.first_name AS child_first_name,
+        c.last_name AS child_last_name,
+        c.birth_date,
+        d.name AS daycare_name,
+        t.first_name AS tutor_first_name,
+        t.last_name AS tutor_last_name,
+        ca.first_name AS caregiver_first_name,
+        ca.last_name AS caregiver_last_name
+
+    FROM
+        children c
+    JOIN
+        daycares d ON c.id_daycare = d.id_daycare
+    JOIN
+        users t ON c.id_tutor = t.id_user
+    JOIN
+        users ca ON c.id_caregiver = ca.id_user;
+"""
+
 # CAMBIO: Nombre de la constante y semántica
 GET_CHILDREN_BY_CAREGIVER = """
     SELECT c.id_child, c.first_name, c.last_name, c.birth_date
@@ -80,6 +103,18 @@ class ChildModel:
                     return cursor.fetchall()
         except Exception as e:
             print(f"Error en get_all_with_relations: {e}")
+            return []
+
+    @staticmethod
+    def get_children_with_tutor_caregiver_daycare():
+        """Ejecuta la consulta solicitada: niños con datos de guardería, tutor y cuidador."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(dictionary=True) as cursor:
+                    cursor.execute(GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE)
+                    return cursor.fetchall()
+        except Exception as e:
+            print(f"Error en get_children_with_tutor_caregiver_daycare: {e}")
             return []
 
     # CAMBIO: Nombre del método y argumento
