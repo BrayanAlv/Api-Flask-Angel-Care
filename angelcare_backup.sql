@@ -209,7 +209,7 @@ CREATE TABLE `children` (
   `birth_date` date DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_child`),
-  UNIQUE KEY `id_tutor` (`id_tutor`),
+  KEY `id_tutor` (`id_tutor`),
   UNIQUE KEY `id_smartwatch` (`id_smartwatch`),
   KEY `id_daycare` (`id_daycare`),
   KEY `id_caregiver` (`id_caregiver`),
