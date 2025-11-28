@@ -830,7 +830,7 @@ def create_child_schedule(child_id):
     ---
     tags:
       - Children Schedule
-    summary: "Agrega una nueva actividad al horario semanal."
+    summary: "Agrega una nueva actividad al horario semanal." 
     parameters:
       - name: child_id
         in: path
@@ -916,4 +916,4 @@ def delete_child_schedule(schedule_id):
     if success:
         return jsonify({"message": "Actividad eliminada correctamente"}), 200
     
-    return jsonify({"error": "Error al eliminar la actividad"}), 500
+    return jsonify({"error": "Error al eliminar la actividad"}), 500  
