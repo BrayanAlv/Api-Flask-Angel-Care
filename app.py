@@ -29,26 +29,28 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 jwt = JWTManager(app)
 
-# --- CARGAR MODELO ENTRENADO---
+# --- CARGAR MODELO DE IA ---
 MODEL_PATH = 'health_classifier.pkl'
 risk_model = None
 
 if os.path.exists(MODEL_PATH):
     try:
         risk_model = joblib.load(MODEL_PATH)
-        print(f" SYSTEM: Modelo cargado exitosamente desde {MODEL_PATH}")
+        print(f"✅ IA SYSTEM: Modelo cargado exitosamente desde {MODEL_PATH}")
     except Exception as e:
-        print(f" ERROR: No se pudo cargar el modelo: {e}")
+        print(f"❌ IA ERROR: No se pudo cargar el modelo: {e}")
 else:
-    print(f" WARNING: No se encontró el archivo {MODEL_PATH}. La predicción no funcionará.")
+    print(f"⚠️ IA WARNING: No se encontró el archivo {MODEL_PATH}. La predicción no funcionará.")
 
-# Configuración de Swagger
+# --- CONFIGURACIÓN DE SWAGGER (CORREGIDA) ---
+# Quitamos 'openapi': '3.0.2' para que use Swagger 2.0 por defecto.
+# Esto hace que el botón 'Try it out' funcione con 'parameters: in: body'.
 app.config['SWAGGER'] = {
     'title': 'API Angel Care',
     'uiversion': 3,
-    'openapi': '3.0.2',
     'version': '2.0',
-    'description': 'API con capas separadas, gestión de guarderías y Módulo de Inteligencia Artificial.'
+    'description': 'API con capas separadas, gestión de guarderías y Módulo de Inteligencia Artificial.',
+    'specs_route': '/apidocs/'
 }
 swagger = Swagger(app)
 
@@ -75,20 +77,25 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(readings_bp)
 app.register_blueprint(children_bp)
 
-# --- Modelo para florecnio entrenado ---
+# --- ENDPOINT DE INTELIGENCIA ARTIFICIAL ---
 @app.route('/api/analyze-reading', methods=['POST'])
 def analyze_reading():
     """
-    Analiza signos vitales para detectar riesgos de salud.
-    Usa un modelo de Regresión Logística entrenado con datos pediátricos.
+    Analiza signos vitales en tiempo real para detectar riesgos de salud.
     ---
     tags:
       - Modelo entrenado
+    consumes:
+      - application/json
+    produces:
+      - application/json
     parameters:
       - in: body
         name: body
+        description: Datos vitales para el análisis.
         required: true
         schema:
+          id: AnalysisInput
           type: object
           required:
             - bpm
@@ -98,89 +105,79 @@ def analyze_reading():
             bpm:
               type: integer
               description: Latidos por minuto
-              example: 150
+              default: 150
             temperature:
               type: number
               description: Temperatura corporal en Celsius
-              example: 39.5
+              default: 39.5
             oxygen_level:
               type: integer
-              description: Nivel de saturación de oxígeno (SpO2)
-              example: 96
+              description: Nivel de saturación de oxígeno
+              default: 96
     responses:
       200:
-        description: Análisis completado exitosamente
+        description: Análisis completado
         schema:
           type: object
           properties:
             status:
               type: string
-              example: "success"
             analysis:
               type: object
-              properties:
-                is_critical:
-                  type: boolean
-                  description: True si se detecta una anomalía de salud
-                risk_probability:
-                  type: number
-                  description: Porcentaje de confianza del modelo (0-100)
-                message:
-                  type: string
-                  description: Mensaje legible para el usuario
       400:
-        description: Datos faltantes o incorrectos
+        description: Error - Datos faltantes o vacíos
       503:
-        description: Modelo de IA no cargado en el servidor
+        description: Modelo IA no cargado
     """
-    # Aqui se checa si esta cargado
+    # 1. Verificar modelo
     if not risk_model:
-        return jsonify({
-            "error": "El servicio de IA no está disponible (Modelo no cargado)", 
-            "is_critical": False
-        }), 503
+        return jsonify({"error": "Modelo no cargado", "is_critical": False}), 503
 
-    data = request.get_json()
+    # 2. DEBUG: Ver qué llega realmente
+    print(f"\n--- DEBUG SWAGGER ---")
+    print(f"Content-Type: {request.content_type}")
+    raw_data = request.get_data(as_text=True)
+    print(f"Data recibida: '{raw_data}'")
+    print(f"---------------------\n")
+
+    # 3. Intentar obtener JSON
+    # Si raw_data está vacío, es porque Swagger no envió nada
+    if not raw_data:
+         return jsonify({"error": "El cuerpo de la petición está vacío. Swagger no envió datos."}), 400
+
+    data = request.get_json(force=True, silent=True)
     
-    # Validadores
+    if not data:
+        return jsonify({"error": "El formato no es JSON válido."}), 400
+    
+    # 4. Validar variables
     bpm = data.get('bpm')
     temp = data.get('temperature')
     oxy = data.get('oxygen_level')
 
     if None in [bpm, temp, oxy]:
-        return jsonify({"error": "Faltan datos vitales (bpm, temperature, oxygen_level)"}), 400
+        return jsonify({"error": "Faltan datos (bpm, temperature, oxygen_level)"}), 400
 
     try:
-        # Esto ignora los warnings
-        features = pd.DataFrame(
-            [[bpm, temp, oxy]], 
-            columns=['bpm', 'temperature', 'oxygen_level']
-        )
-        
-        # Realizar la predicción
-        prediction = risk_model.predict(features)[0] # 0 = Normal, 1 = Riesgo
-        probability = risk_model.predict_proba(features)[0][1] # Probabilidad de ser clase 1
-        
+        # 5. Predicción
+        features = pd.DataFrame([[bpm, temp, oxy]], columns=['bpm', 'temperature', 'oxygen_level'])
+        prediction = risk_model.predict(features)[0]
+        probability = risk_model.predict_proba(features)[0][1]
         is_risk = bool(prediction == 1)
         
-        # Retornar 
         return jsonify({
             "status": "success",
-            "data_received": {
-                "bpm": bpm,
-                "temperature": temp,
-                "oxygen_level": oxy
-            },
+            "data_received": {"bpm": bpm, "temperature": temp, "oxygen_level": oxy},
             "analysis": {
                 "is_critical": is_risk,
                 "risk_probability": round(probability * 100, 2),
-                "message": "⚠️ ANOMALÍA DETECTADA: Signos vitales fuera de rango." if is_risk else "✅ Signos vitales normales."
+                "message": "ANOMALÍA DETECTADA" if is_risk else " Signos Normales"
             }
         }), 200
 
     except Exception as e:
-        print(f"Error en predicción IA: {str(e)}")
-        return jsonify({"error": "Error interno procesando la predicción"}), 500
+        print(f"Error IA: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # Ruta de bienvenida
