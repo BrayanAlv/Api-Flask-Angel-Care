@@ -23,14 +23,28 @@ def get_users():
               items:
                 type: object
                 properties:
-                  id_user: {type: integer}
-                  id_daycare: {type: integer, nullable: true}
-                  username: {type: string}
-                  first_name: {type: string}
-                  last_name: {type: string}
-                  email: {type: string}
-                  role: {type: string, enum: ['admin', 'caregiver', 'tutor']}
-                  created_at: {type: string, format: date-time}
+                  id_user:
+                    type: integer
+                  id_daycare:
+                    type: integer
+                    nullable: true
+                  username:
+                    type: string
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  email:
+                    type: string
+                  phone:
+                    type: string
+                    description: "Teléfono de contacto"
+                  role:
+                    type: string
+                    enum: ['admin', 'caregiver', 'tutor']
+                  created_at:
+                    type: string
+                    format: date-time
     """
     users = UserModel.get_all()
     return jsonify(users)
@@ -54,6 +68,31 @@ def get_user(id_user):
     responses:
       '200':
         description: "Detalles del usuario."
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_user:
+                  type: integer
+                id_daycare:
+                  type: integer
+                  nullable: true
+                username:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                role:
+                  type: string
+                created_at:
+                  type: string
+                  format: date-time
       '404':
         description: "Usuario no encontrado."
     """
@@ -99,6 +138,10 @@ def create_user():
                 type: string
                 format: email
                 example: "juan.perez@example.com"
+              phone:
+                type: string
+                description: "Teléfono de contacto"
+                example: "664-123-4567"
               role:
                 type: string
                 enum: ['admin', 'caregiver', 'tutor']
@@ -119,10 +162,12 @@ def create_user():
         description: "Conflicto, el username o email ya existen."
     """
     data = request.get_json()
+    # Validamos campos obligatorios básicos
     required_fields = ['username', 'password', 'first_name', 'last_name', 'email', 'role']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Faltan campos requeridos"}), 400
 
+    # Llamamos al modelo (que ya incluye 'phone' en la inserción)
     user_id = UserModel.create(data)
     return jsonify({"message": "Usuario creado", "id": user_id}), 201
 
@@ -150,12 +195,24 @@ def update_user(id_user):
           schema:
             type: object
             properties:
-              id_daycare: {type: integer, nullable: true}
-              username: {type: string}
-              first_name: {type: string}
-              last_name: {type: string}
-              email: {type: string, format: email}
-              role: {type: string, enum: ['admin', 'caregiver', 'tutor']}
+              id_daycare:
+                type: integer
+                nullable: true
+              username:
+                type: string
+              first_name:
+                type: string
+              last_name:
+                type: string
+              email:
+                type: string
+                format: email
+              phone:
+                type: string
+                description: "Teléfono de contacto"
+              role:
+                type: string
+                enum: ['admin', 'caregiver', 'tutor']
             required:
               - username
               - first_name
@@ -204,4 +261,3 @@ def delete_user(id_user):
     if UserModel.delete(id_user):
         return jsonify({"message": "Usuario eliminado"})
     return jsonify({"error": "Usuario no encontrado"}), 404
-

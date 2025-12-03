@@ -42,6 +42,10 @@ def get_all_children():
                     format: date
                     description: "Fecha de nacimiento"
                     example: "2020-06-15"
+                  profile_image:
+                    type: string
+                    description: "URL o ruta de la imagen de perfil"
+                    example: "/niña.png"
                   daycare_name:
                     type: string
                     description: "Nombre de la guardería"
@@ -72,32 +76,6 @@ def get_all_children():
                     type: string
                     description: "Modelo del smartwatch"
                     example: "KidsSafe v2"
-            examples:
-              ejemplo:
-                summary: "Ejemplo de respuesta"
-                value:
-                  - id_child: 7
-                    child_first_name: "Sofía"
-                    child_last_name: "López"
-                    birth_date: "2020-06-15"
-                    daycare_name: "Pequeños Gigantes"
-                    tutor_first_name: "María"
-                    tutor_last_name: "García"
-                    caregiver_first_name: "Carlos"
-                    caregiver_last_name: "Ramírez"
-                    device_id: "SW-ABC123"
-                    smartwatch_model: "KidsSafe v2"
-                  - id_child: 8
-                    child_first_name: "Diego"
-                    child_last_name: "Pérez"
-                    birth_date: "2019-11-02"
-                    daycare_name: "Pequeños Gigantes"
-                    tutor_first_name: "Luis"
-                    tutor_last_name: "Pérez"
-                    caregiver_first_name: null
-                    caregiver_last_name: null
-                    device_id: "SW-XYZ789"
-                    smartwatch_model: "AngelCare Band"
     """
     data = ChildModel.get_all_with_relations()
     return jsonify(data)
@@ -110,28 +88,6 @@ def get_children_with_tutor_caregiver_daycare():
     tags:
       - Children
     summary: "Obtiene los niños con datos de guardería, tutor y cuidador usando la consulta solicitada."
-    description: |
-      Ejecuta exactamente la siguiente consulta SQL para devolver la información solicitada:
-
-      SELECT
-          c.id_child,
-          c.first_name AS child_first_name,
-          c.last_name AS child_last_name,
-          c.birth_date,
-          d.name AS daycare_name,
-          t.first_name AS tutor_first_name,
-          t.last_name AS tutor_last_name,
-          ca.first_name AS caregiver_first_name,
-          ca.last_name AS caregiver_last_name
-
-      FROM
-          children c
-      JOIN
-          daycares d ON c.id_daycare = d.id_daycare
-      JOIN
-          users t ON c.id_tutor = t.id_user
-      JOIN
-          users ca ON c.id_caregiver = ca.id_user;
     responses:
       '200':
         description: "Lista de niños con los campos pedidos."
@@ -142,56 +98,16 @@ def get_children_with_tutor_caregiver_daycare():
               items:
                 type: object
                 properties:
-                  id_child:
-                    type: integer
-                    example: 5
-                  child_first_name:
-                    type: string
-                    example: "Ana"
-                  child_last_name:
-                    type: string
-                    example: "Gómez"
-                  birth_date:
-                    type: string
-                    format: date
-                    example: "2020-01-20"
-                  daycare_name:
-                    type: string
-                    example: "Peques House"
-                  tutor_first_name:
-                    type: string
-                    example: "Luis"
-                  tutor_last_name:
-                    type: string
-                    example: "Gómez"
-                  caregiver_first_name:
-                    type: string
-                    example: "Carla"
-                  caregiver_last_name:
-                    type: string
-                    example: "Rojas"
-            examples:
-              ejemplo:
-                summary: "Ejemplo de respuesta"
-                value:
-                  - id_child: 5
-                    child_first_name: "Ana"
-                    child_last_name: "Gómez"
-                    birth_date: "2020-01-20"
-                    daycare_name: "Peques House"
-                    tutor_first_name: "Luis"
-                    tutor_last_name: "Gómez"
-                    caregiver_first_name: "Carla"
-                    caregiver_last_name: "Rojas"
-                  - id_child: 6
-                    child_first_name: "Mario"
-                    child_last_name: "Paz"
-                    birth_date: "2019-10-11"
-                    daycare_name: "Peques House"
-                    tutor_first_name: "Elena"
-                    tutor_last_name: "Paz"
-                    caregiver_first_name: "Hugo"
-                    caregiver_last_name: "Luna"
+                  id_child: {type: integer}
+                  child_first_name: {type: string}
+                  child_last_name: {type: string}
+                  profile_image: {type: string}
+                  birth_date: {type: string, format: date}
+                  daycare_name: {type: string}
+                  tutor_first_name: {type: string}
+                  tutor_last_name: {type: string}
+                  caregiver_first_name: {type: string}
+                  caregiver_last_name: {type: string}
     """
     data = ChildModel.get_children_with_tutor_caregiver_daycare()
     return jsonify(data)
@@ -225,6 +141,7 @@ def get_children_by_caregiver(caregiver_id):
                   id_child: {type: integer}
                   first_name: {type: string}
                   last_name: {type: string}
+                  profile_image: {type: string}
                   birth_date: {type: string, format: date}
     """
     children = ChildModel.get_by_caregiver_id(caregiver_id)
@@ -260,6 +177,7 @@ def get_children_by_tutor(tutor_id):
                   id_child: {type: integer}
                   first_name: {type: string}
                   last_name: {type: string}
+                  profile_image: {type: string}
                   birth_date: {type: string, format: date}
                   daycare_name: {type: string}
                   device_id: {type: string}
@@ -291,12 +209,12 @@ def get_child_full_details(child_id):
           application/json:
             schema:
               type: object
-              # Aquí defines las propiedades que devuelve tu ChildModel.get_details_by_id
               properties:
                 id_child: {type: integer}
                 first_name: {type: string}
                 last_name: {type: string}
                 birth_date: {type: string, format: date}
+                profile_image: {type: string}
                 id_daycare: {type: integer}
                 id_tutor: {type: integer}
                 id_smartwatch: {type: integer}
@@ -378,6 +296,7 @@ def get_tutor_by_child(child_id):
                 first_name: {type: string}
                 last_name: {type: string}
                 email: {type: string, format: email}
+                phone: {type: string}
       '404':
         description: "Tutor no encontrado para este niño."
     """
@@ -416,6 +335,7 @@ def get_caregiver_by_child(child_id):
                   first_name: {type: string}
                   last_name: {type: string}
                   email: {type: string, format: email}
+                  phone: {type: string}
                   daycare_phone: {type: string}
     """
     caregiver = ChildModel.get_caregivers_by_child_id(child_id)
@@ -499,6 +419,7 @@ def create_child():
               first_name: {type: string}
               last_name: {type: string}
               birth_date: {type: string, format: date}
+              profile_image: {type: string, description: "URL o path de la imagen de perfil"}
               id_daycare: {type: integer}
               id_tutor: {type: integer}
               id_smartwatch: {type: integer, nullable: true}
@@ -520,6 +441,7 @@ def create_child():
     except Exception:
         return jsonify({"error": "Formato de fecha inválido en 'birth_date'. Use YYYY-MM-DD."}), 400
 
+    # SE AGREGA profile_image AL LLAMADO DEL MODELO
     child = ChildModel.create_child(
         first_name=body["first_name"],
         last_name=body["last_name"],
@@ -528,6 +450,7 @@ def create_child():
         id_tutor=body["id_tutor"],
         id_smartwatch=body.get("id_smartwatch"),
         id_caregiver=body.get("id_caregiver"),
+        profile_image=body.get("profile_image")
     )
     if not child:
         return jsonify({"error": "No se pudo crear el niño."}), 400
@@ -559,6 +482,7 @@ def update_child(child_id):
               first_name: {type: string}
               last_name: {type: string}
               birth_date: {type: string, format: date}
+              profile_image: {type: string}
               id_daycare: {type: integer}
               id_tutor: {type: integer}
               id_smartwatch: {type: integer}
@@ -579,6 +503,7 @@ def update_child(child_id):
         except Exception:
             return jsonify({"error": "Formato de fecha inválido en 'birth_date'. Use YYYY-MM-DD."}), 400
 
+    # ChildModel.update_child ya está preparado para recibir profile_image en el diccionario body
     updated = ChildModel.update_child(child_id, body)
     if not updated:
         # comprobar si el niño existe
@@ -916,4 +841,4 @@ def delete_child_schedule(schedule_id):
     if success:
         return jsonify({"message": "Actividad eliminada correctamente"}), 200
     
-    return jsonify({"error": "Error al eliminar la actividad"}), 500  
+    return jsonify({"error": "Error al eliminar la actividad"}), 500

@@ -7,6 +7,7 @@ GET_ALL_CHILDREN_WITH_RELATIONS = """
         c.first_name AS child_first_name,
         c.last_name AS child_last_name,
         c.birth_date,
+        c.profile_image,  -- NUEVO CAMPO
         d.name AS daycare_name,
         t.first_name AS tutor_first_name,
         t.last_name AS tutor_last_name,
@@ -32,6 +33,7 @@ GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
         c.first_name AS child_first_name,
         c.last_name AS child_last_name,
         c.birth_date,
+        c.profile_image, -- NUEVO CAMPO
         d.name AS daycare_name,
         t.first_name AS tutor_first_name,
         t.last_name AS tutor_last_name,
@@ -48,19 +50,19 @@ GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
 """
 
 GET_CHILDREN_BY_CAREGIVER = """
-    SELECT c.id_child, c.first_name, c.last_name, c.birth_date, c.id_smartwatch
+    SELECT c.id_child, c.first_name, c.last_name, c.birth_date, c.profile_image, c.id_smartwatch
     FROM children c
     JOIN users u ON c.id_caregiver = u.id_user
     WHERE u.id_user = %s AND u.role = 'caregiver';
 """
 
-# NUEVA CONSULTA: Niños por Tutor
 GET_CHILDREN_BY_TUTOR = """
     SELECT 
         c.id_child, 
         c.first_name, 
         c.last_name, 
         c.birth_date, 
+        c.profile_image, -- NUEVO CAMPO
         d.name AS daycare_name,
         s.device_id
     FROM children c
@@ -72,14 +74,14 @@ GET_CHILDREN_BY_TUTOR = """
 GET_CHILD_DETAILS = "SELECT * FROM children WHERE id_child = %s;"
 
 GET_TUTOR_BY_CHILD = """
-    SELECT u.id_user, u.first_name, u.last_name, u.email
+    SELECT u.id_user, u.first_name, u.last_name, u.email, u.phone
     FROM users u
     JOIN children c ON u.id_user = c.id_tutor
     WHERE c.id_child = %s;
 """
 
 GET_CAREGIVERS_BY_CHILD = """
-    SELECT u.first_name, u.last_name, u.email, d.phone AS daycare_phone
+    SELECT u.first_name, u.last_name, u.email, u.phone, d.phone AS daycare_phone
     FROM users u
     JOIN daycares d ON u.id_daycare = d.id_daycare
     WHERE u.role = 'caregiver' AND u.id_daycare = (SELECT id_daycare FROM children WHERE id_child = %s);
@@ -95,9 +97,10 @@ GET_SENSOR_AVERAGES_BY_DATE = """
     WHERE c.id_child = %s;
 """
 
+# ACTUALIZADO: Incluye profile_image
 CREATE_CHILD = """
-    INSERT INTO children (first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch, id_caregiver)
-    VALUES (%s, %s, %s, %s, %s, %s, %s);
+    INSERT INTO children (first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch, id_caregiver, profile_image)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
 """
 
 UPDATE_CHILD_BASE = "UPDATE children SET {set_clause} WHERE id_child = %s;"
@@ -162,7 +165,6 @@ class ChildModel:
 
     @staticmethod
     def get_children_with_tutor_caregiver_daycare():
-        """Ejecuta la consulta solicitada: niños con datos de guardería, tutor y cuidador."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -174,7 +176,6 @@ class ChildModel:
 
     @staticmethod
     def get_by_caregiver_id(caregiver_id):
-        """Obtiene la lista de niños supervisados por un cuidador."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -186,7 +187,6 @@ class ChildModel:
 
     @staticmethod
     def get_by_tutor_id(tutor_id):
-        """Obtiene la lista de niños a cargo de un tutor (padre)."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -198,7 +198,6 @@ class ChildModel:
 
     @staticmethod
     def get_details_by_id(child_id):
-        """Obtiene los datos personales de un niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -210,7 +209,6 @@ class ChildModel:
 
     @staticmethod
     def get_tutor_by_child_id(child_id):
-        """Obtiene los datos del tutor de un niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -222,7 +220,6 @@ class ChildModel:
 
     @staticmethod
     def get_caregivers_by_child_id(child_id):
-        """Obtiene la lista de cuidadores (caregivers) de la guardería de un niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -234,7 +231,6 @@ class ChildModel:
 
     @staticmethod
     def get_sensor_averages(child_id, date_str):
-        """Calcula el promedio de sensores para un niño en una fecha específica."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -245,7 +241,7 @@ class ChildModel:
             return None
 
     @staticmethod
-    def create_child(first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch=None, id_caregiver=None):
+    def create_child(first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch=None, id_caregiver=None, profile_image=None):
         """Crea un nuevo niño y devuelve su registro completo."""
         try:
             with get_db_connection() as conn:
@@ -260,6 +256,7 @@ class ChildModel:
                             id_tutor,
                             id_smartwatch,
                             id_caregiver,
+                            profile_image  # NUEVO CAMPO
                         ),
                     )
                     child_id = cursor.lastrowid
@@ -274,7 +271,8 @@ class ChildModel:
         """Actualiza campos del niño indicado dinámicamente."""
         if not fields:
             return None
-        allowed = {"first_name", "last_name", "birth_date", "id_daycare", "id_tutor", "id_smartwatch", "id_caregiver"}
+        # AGREGADO: profile_image
+        allowed = {"first_name", "last_name", "birth_date", "id_daycare", "id_tutor", "id_smartwatch", "id_caregiver", "profile_image"}
         set_parts = []
         values = []
         for key, val in fields.items():
@@ -294,11 +292,9 @@ class ChildModel:
             print(f"Error en update_child: {e}")
             return None
 
-    # --- MÉTODOS PARA NOTAS ---
-
+    # --- MÉTODOS PARA NOTAS Y HORARIOS (Sin cambios) ---
     @staticmethod
     def get_notes(child_id):
-        """Obtiene todas las notas asociadas a un niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -321,7 +317,6 @@ class ChildModel:
 
     @staticmethod
     def create_note(child_id, id_author, title, content, priority):
-        """Crea una nota nueva para un niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
@@ -335,7 +330,6 @@ class ChildModel:
 
     @staticmethod
     def update_note(note_id, fields):
-        """Actualiza una nota existente."""
         if not fields:
             return None
         allowed = {"title", "content", "priority"}
@@ -360,7 +354,6 @@ class ChildModel:
 
     @staticmethod
     def delete_note(note_id):
-        """Elimina una nota por su ID."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
@@ -373,11 +366,8 @@ class ChildModel:
             print(f"Error en delete_note: {e}")
             return False
 
-    # --- MÉTODOS PARA HORARIOS (SCHEDULES) ---
-
     @staticmethod
     def get_schedules(child_id):
-        """Obtiene el horario semanal del niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -389,7 +379,6 @@ class ChildModel:
 
     @staticmethod
     def get_schedule_by_id(schedule_id):
-        """Obtiene una actividad específica del horario por ID."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor(dictionary=True) as cursor:
@@ -401,7 +390,6 @@ class ChildModel:
 
     @staticmethod
     def create_schedule(child_id, day_of_week, start_time, end_time, activity_name, description):
-        """Agrega una nueva actividad al horario del niño."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
@@ -418,7 +406,6 @@ class ChildModel:
 
     @staticmethod
     def delete_schedule(schedule_id):
-        """Elimina una actividad del horario."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
