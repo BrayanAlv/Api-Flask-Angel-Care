@@ -1,13 +1,16 @@
 from db import get_db_connection
 
 # --- Consultas SQL para el Modelo Child ---
+
+# CORRECCIÓN 1: Se agregó 'c.id_smartwatch' aquí para que AllChildren funcione
 GET_ALL_CHILDREN_WITH_RELATIONS = """
     SELECT
         c.id_child,
         c.first_name AS child_first_name,
         c.last_name AS child_last_name,
         c.birth_date,
-        c.profile_image,  -- NUEVO CAMPO
+        c.profile_image,
+        c.id_smartwatch,  -- <--- ESTE FALTABA
         d.name AS daycare_name,
         t.first_name AS tutor_first_name,
         t.last_name AS tutor_last_name,
@@ -33,7 +36,8 @@ GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
         c.first_name AS child_first_name,
         c.last_name AS child_last_name,
         c.birth_date,
-        c.profile_image, -- NUEVO CAMPO
+        c.profile_image,
+        c.id_smartwatch, -- <--- Agregado por si acaso
         d.name AS daycare_name,
         t.first_name AS tutor_first_name,
         t.last_name AS tutor_last_name,
@@ -56,13 +60,15 @@ GET_CHILDREN_BY_CAREGIVER = """
     WHERE u.id_user = %s AND u.role = 'caregiver';
 """
 
+# CORRECCIÓN 2: Se agregó 'c.id_smartwatch' para el Tutor también
 GET_CHILDREN_BY_TUTOR = """
     SELECT 
         c.id_child, 
         c.first_name, 
         c.last_name, 
         c.birth_date, 
-        c.profile_image, -- NUEVO CAMPO
+        c.profile_image,
+        c.id_smartwatch, -- <--- ESTE FALTABA
         d.name AS daycare_name,
         s.device_id
     FROM children c
@@ -97,7 +103,6 @@ GET_SENSOR_AVERAGES_BY_DATE = """
     WHERE c.id_child = %s;
 """
 
-# ACTUALIZADO: Incluye profile_image
 CREATE_CHILD = """
     INSERT INTO children (first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch, id_caregiver, profile_image)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
@@ -242,7 +247,6 @@ class ChildModel:
 
     @staticmethod
     def create_child(first_name, last_name, birth_date, id_daycare, id_tutor, id_smartwatch=None, id_caregiver=None, profile_image=None):
-        """Crea un nuevo niño y devuelve su registro completo."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
@@ -256,7 +260,7 @@ class ChildModel:
                             id_tutor,
                             id_smartwatch,
                             id_caregiver,
-                            profile_image  # NUEVO CAMPO
+                            profile_image
                         ),
                     )
                     child_id = cursor.lastrowid
@@ -268,10 +272,8 @@ class ChildModel:
 
     @staticmethod
     def update_child(child_id, fields):
-        """Actualiza campos del niño indicado dinámicamente."""
         if not fields:
             return None
-        # AGREGADO: profile_image
         allowed = {"first_name", "last_name", "birth_date", "id_daycare", "id_tutor", "id_smartwatch", "id_caregiver", "profile_image"}
         set_parts = []
         values = []
@@ -292,7 +294,7 @@ class ChildModel:
             print(f"Error en update_child: {e}")
             return None
 
-    # --- MÉTODOS PARA NOTAS Y HORARIOS (Sin cambios) ---
+    # --- MÉTODOS PARA NOTAS Y HORARIOS ---
     @staticmethod
     def get_notes(child_id):
         try:
