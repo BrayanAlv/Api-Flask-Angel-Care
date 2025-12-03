@@ -19,7 +19,7 @@ def train_and_save():
             database=os.getenv("DB_NAME", "guardianAngel")
         )
     except Exception as e:
-        print(f"❌ Error conexión: {e}")
+        print(f" Error conexión: {e}")
         return
     
     query = "SELECT bpm, temperature, oxygen_level, risk_label FROM readings"
@@ -28,10 +28,10 @@ def train_and_save():
     finally:
         conn.close()
     
-    print(f"📊 Datos cargados: {len(df)}")
+    print(f" Datos cargados: {len(df)}")
     
     if len(df) < 100:
-        print("❌ Error: Pocos datos. Importa el SQL generado primero.")
+        print(" Error: Pocos datos. Importa el SQL generado primero.")
         return
 
     X = df[['bpm', 'temperature', 'oxygen_level']]
@@ -39,15 +39,15 @@ def train_and_save():
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    print("🧠 Entrenando...")
+    print(" Entrenando...")
     model = LogisticRegression(max_iter=2000)
     model.fit(X_train, y_train)
     
     accuracy = accuracy_score(y_test, model.predict(X_test))
-    print(f"✅ Precisión: {accuracy * 100:.2f}%")
+    print(f" Precisión: {accuracy * 100:.2f}%")
     
     joblib.dump(model, 'health_classifier.pkl')
-    print("💾 Modelo guardado: health_classifier.pkl")
+    print(" Modelo guardado: health_classifier.pkl")
 
 if __name__ == "__main__":
     train_and_save()

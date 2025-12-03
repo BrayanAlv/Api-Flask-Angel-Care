@@ -48,7 +48,7 @@ GET_CHILDREN_WITH_TUTOR_CAREGIVER_DAYCARE = """
 """
 
 GET_CHILDREN_BY_CAREGIVER = """
-    SELECT c.id_child, c.first_name, c.last_name, c.birth_date
+    SELECT c.id_child, c.first_name, c.last_name, c.birth_date, c.id_smartwatch
     FROM children c
     JOIN users u ON c.id_caregiver = u.id_user
     WHERE u.id_user = %s AND u.role = 'caregiver';
